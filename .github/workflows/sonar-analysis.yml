@@ -1,64 +1,35 @@
-name: SonarQube Analysis
+name: SonarQube Code Analysis
 
 on:
-  push:
-    branches:
-      - main
-
-  pull_request:
-    branches:
-      - main
-
   workflow_dispatch:
 
 jobs:
   sonar-analysis:
     name: SonarQube Code Analysis
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
-      # -------------------------------------------------------
-      # 1. Checkout repository
-      # -------------------------------------------------------
       - name: Checkout Source Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # -------------------------------------------------------
-      # 2. Verify SonarQube is reachable
-      # -------------------------------------------------------
-      - name: Check SonarQube Status
-        run: |
-          echo "Checking SonarQube..."
-          curl --fail http://localhost:9000/api/system/status
-          echo ""
-          echo "SonarQube is reachable."
-
-      # -------------------------------------------------------
-      # 3. Frontend SonarQube Scan
-      # -------------------------------------------------------
       - name: SonarQube Scan - Frontend
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FE }}
-          SONAR_HOST_URL: http://localhost:9000
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
             -Dsonar.projectKey=chat-fe
             -Dsonar.projectName=chat-fe
-            -Dsonar.sources=frontend
 
-      # -------------------------------------------------------
-      # 4. Backend SonarQube Scan
-      # -------------------------------------------------------
       - name: SonarQube Scan - Backend
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BE }}
-          SONAR_HOST_URL: http://localhost:9000
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         with:
           args: >
             -Dsonar.projectKey=chat-be
             -Dsonar.projectName=chat-be
-            -Dsonar.sources=backend
