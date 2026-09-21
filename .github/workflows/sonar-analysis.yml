@@ -14,11 +14,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check SonarQube Configuration
+        run: |
+          echo "SONAR_HOST_URL=${{ vars.SONAR_HOST_URL }}"
+
       - name: SonarQube Scan - Frontend
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FE }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
         with:
           args: >
             -Dsonar.projectKey=chat-fe
@@ -28,7 +32,7 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BE }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
         with:
           args: >
             -Dsonar.projectKey=chat-be
