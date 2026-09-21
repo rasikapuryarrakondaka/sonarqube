@@ -1,0 +1,57 @@
+name: SonarQube Analysis
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+
+  frontend-sonar:
+    name: Frontend SonarQube Scan
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan Frontend
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_FE }}
+          SONAR_HOST_URL: http://localhost:9000
+        with:
+          projectBaseDir: frontend
+          args: >
+            -Dsonar.projectKey=chat-fe
+            -Dsonar.projectName=chat-fe
+
+
+  backend-sonar:
+    name: Backend SonarQube Scan
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan Backend
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN_BE }}
+          SONAR_HOST_URL: http://localhost:9000
+        with:
+          projectBaseDir: backend
+          args: >
+            -Dsonar.projectKey=chat-be
+            -Dsonar.projectName=chat-be
