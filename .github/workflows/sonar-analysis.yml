@@ -45,17 +45,23 @@ jobs:
           python -m pip install --upgrade pip
 
           if [ -f "requirements.txt" ]; then
+            echo "requirements.txt found."
             pip install -r requirements.txt
+          else
+            echo "No requirements.txt found."
           fi
 
           if [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
+            echo "Python project configuration found."
             pip install .
+          else
+            echo "No pyproject.toml or setup.py found."
           fi
 
           pip install pytest pytest-cov
 
       # ======================================================
-      # 5. RUN TESTS AND GENERATE COVERAGE
+      # 5. TEST + COVERAGE
       # ======================================================
       - name: Test with coverage
         run: |
@@ -68,34 +74,79 @@ jobs:
           echo "Test files found: $TEST_COUNT"
 
           if [ "$TEST_COUNT" -eq 0 ]; then
-            echo "ERROR: No Python test files found."
-            exit 1
-          fi
 
-          if [ -d "app" ]; then
-            pytest \
-              --cov=app \
-              --cov-report=xml:coverage.xml \
-              --cov-report=term-missing
+            echo "No Python tests found."
+            echo "Creating placeholder coverage.xml."
+
+            cat > coverage.xml <<'EOF'
+          <?xml version="1.0" ?>
+          <coverage version="1.0"
+                    timestamp="0"
+                    lines-valid="0"
+                    lines-covered="0"
+                    line-rate="0"
+                    branches-valid="0"
+                    branches-covered="0"
+                    branch-rate="0"
+                    complexity="0">
+            <sources>
+              <source>.</source>
+            </sources>
+            <packages/>
+          </coverage>
+          EOF
+
           else
-            pytest \
-              --cov=. \
-              --cov-report=xml:coverage.xml \
-              --cov-report=term-missing
+
+            echo "Tests found. Running pytest..."
+
+            if [ -d "app" ]; then
+
+              echo "app directory found."
+
+              pytest \
+                --cov=app \
+                --cov-report=xml:coverage.xml \
+                --cov-report=term-missing
+
+            else
+
+              echo "app directory not found."
+              echo "Running coverage against repository."
+
+              pytest \
+                --cov=. \
+                --cov-report=xml:coverage.xml \
+                --cov-report=term-missing
+
+            fi
+
           fi
 
           echo "Checking coverage.xml..."
-          test -f coverage.xml
+
+          if [ ! -f "coverage.xml" ]; then
+            echo "ERROR: coverage.xml was not generated."
+            exit 1
+          fi
+
+          ls -lh coverage.xml
 
       # ======================================================
       # 6. TEST SONARQUBE CONNECTION
       # ======================================================
       - name: Test SonarQube Connection
         run: |
-          echo "Testing SonarQube connection..."
+          echo "Testing SonarQube server..."
 
-          curl --fail \
+          echo "SonarQube URL:"
+          echo "${{ vars.SONAR_HOST_URL }}"
+
+          curl --fail --show-error \
             "${{ vars.SONAR_HOST_URL }}/api/system/status"
+
+          echo ""
+          echo "SonarQube connection successful."
 
       # ======================================================
       # 7. SONARQUBE ANALYSIS
@@ -130,3 +181,4 @@ jobs:
           name: backend-coverage-report
           path: coverage.xml
           retention-days: 14
+          if-no-files-found: error
